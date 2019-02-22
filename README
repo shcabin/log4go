@@ -1,0 +1,8 @@
+fork from code.google.com/p/log4go
+
+Installation:
+- Run `go get github.com/shcabin/log4go`
+
+Usage:
+- Add the following import:
+import l4g "github.com/shcabin/log4go"
