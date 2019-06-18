@@ -34,6 +34,7 @@ type FileLogWriter struct {
 	// Rotate daily
 	daily          bool
 	daily_opendate int
+	opendate       string
 
 	// Keep old logfiles (.001, .002, etc)
 	rotate bool
@@ -136,15 +137,22 @@ func (w *FileLogWriter) intRotate() error {
 
 	// If we are keeping log files, move it to the next available number
 	if w.rotate {
-		_, err := os.Lstat(w.filename)
+		fi, err := os.Lstat(w.filename)
 		if err == nil { // file exists
 			// Find the next available number
 			num := 1
 			fname := ""
 			if w.daily {
-				today := time.Now().Format("2006-01-02")
+				if w.opendate == "" {
+					modtime := fi.ModTime()
+					if modtime.Unix() < 86400*365 {
+						w.opendate = time.Now().Format("2006-01-02")
+					} else {
+						w.opendate = modtime.Format("2006-01-02")
+					}
+				}
 				for ; err == nil && num <= 999; num++ {
-					fname = w.filename + fmt.Sprintf(".%s.%03d", today, num)
+					fname = w.filename + fmt.Sprintf(".%s.%03d", w.opendate, num)
 					_, err = os.Lstat(fname)
 				}
 				// return error if the last file checked still existed
@@ -182,6 +190,7 @@ func (w *FileLogWriter) intRotate() error {
 
 	// Set the daily open date to the current date
 	w.daily_opendate = now.Day()
+	w.opendate = now.Format("2006-01-02")
 
 	// initialize rotation values
 	w.maxlines_curlines = 0
